@@ -6,18 +6,18 @@ from skimage.feature import graycomatrix, graycoprops
 from skimage import color
 from PIL import Image
 
+# config 
 st.set_page_config(
     page_title="Analisis GLCM",
     layout="wide",
 )
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+#Helpers
 FITUR = {
-    "Contrast":      ("contrast",      "Seberapa besar perbedaan intensitas antar piksel. Nilai tinggi = tekstur kasar."),
-    "Dissimilarity": ("dissimilarity", "Perbedaan lokal antar piksel. Mirip Contrast tapi lebih sensitif."),
-    "Homogeneity":   ("homogeneity",   "Seberapa seragam tekstur. Nilai tinggi = tekstur halus."),
-    "Energy":        ("energy",        "Seberapa berulang pola tekstur. Nilai tinggi = pola teratur."),
-    "Correlation":   ("correlation",   "Keterkaitan antar piksel. Nilai ±1 = ada pola kuat."),
+    "Contrast":     ("contrast",     "perbedaan intensitas antar piksel. Nilai tinggi = tekstur kasar."),
+    "Correlation":  ("correlation",  "Keterkaitan antar piksel. Nilai ±1 = ada pola kuat."),
+    "Energy":       ("energy",       "Seberapa berulang pola tekstur. Nilai tinggi = pola teratur."),
+    "Homogeneity":  ("homogeneity",  "Seberapa seragam tekstur. Nilai tinggi = tekstur halus."),
 }
 
 ANGLE_LABELS = ["0°", "45°", "90°", "135°"]
@@ -34,30 +34,27 @@ def hitung_glcm(gray_img, jarak, levels):
         normed=True,
     ), gray_q
 
-# ── Judul ─────────────────────────────────────────────────────────────────────
-st.title(" Analisis Tekstur GLCM")
-st.caption("Gray-Level Co-occurrence Matrix")
+#Judul
+st.title("Analisis Tekstur GLCM")
 st.divider()
 
-# ── Upload + Parameter (satu baris) ──────────────────────────────────────────
+# Upload + Parameter 
 col_up, col_par = st.columns([2, 1])
 
 with col_up:
-    uploaded = st.file_uploader("Upload Gambar (JPG / PNG)", type=["jpg", "jpeg", "png"])
+    uploaded = st.file_uploader(" Upload Gambar", type=["jpg", "jpeg", "png"])
 
 with col_par:
-    st.markdown("**⚙️ Parameter GLCM**")
-    jarak  = st.slider("Jarak antar piksel (d)", 1, 5, 1,
-                    help="Seberapa jauh pasangan piksel yang dibandingkan")
-    levels = st.select_slider("Jumlah level abu-abu", options=[8, 16, 32, 64, 128, 256], value=64,
-                            help="Semakin kecil = proses lebih cepat")
+    st.markdown("Parameter GLCM")
+    jarak  = st.slider("Jarak antar piksel (d)", 1, 5, 1)
+    levels = st.select_slider("Jumlah level abu-abu", options=[8, 16, 32, 64, 128, 256], value=64)
 
-# ── Stop jika belum upload ────────────────────────────────────────────────────
+# Stop jika belum upload
 if uploaded is None:
-    st.info("👆 Silakan upload gambar terlebih dahulu untuk memulai analisis.")
+    st.info("upload gambar untuk memulai analisis.")
     st.stop()
 
-# ── Proses gambar ─────────────────────────────────────────────────────────────
+# Proses gambar 
 try:
     pil_img = Image.open(uploaded).convert("RGB")
 except Exception as e:
@@ -70,10 +67,9 @@ gray_256 = (gray_f * 255).astype(np.uint8)
 
 glcm, gray_q = hitung_glcm(gray_256, jarak, levels)
 
-
-# BAGIAN 1 — Pratinjau Gambar
+#  Pratinjau Gambar
 st.subheader("Pratinjau Gambar")
-st.caption(f"Ukuran: {pil_img.width} × {pil_img.height} px  |  Level abu-abu: {levels}  |  Jarak: d = {jarak}")
+st.caption(f"Ukuran: {pil_img.width} x {pil_img.height} px | Level abu-abu: {levels} | Jarak: d = {jarak}")
 
 c1, c2, c3 = st.columns(3)
 
@@ -87,7 +83,7 @@ with c3:
     fig, ax = plt.subplots(figsize=(4, 3))
     ax.hist(gray_256.ravel(), bins=64, color="#3b82f6", edgecolor="none", alpha=0.85)
     ax.set_title("Histogram Intensitas", fontsize=10)
-    ax.set_xlabel("Nilai Piksel (0–255)", fontsize=8)
+    ax.set_xlabel("Nilai Piksel (0-255)", fontsize=8)
     ax.set_ylabel("Jumlah Piksel", fontsize=8)
     ax.tick_params(labelsize=7)
     fig.tight_layout()
@@ -96,9 +92,10 @@ with c3:
 
 st.divider()
 
-# BAGIAN 2 — Fitur Haralick
-st.subheader("2️⃣ Fitur Haralick (rata-rata dari 4 sudut)")
-cols = st.columns(5)
+# BAGIAN 2  Fitur Haralick
+st.subheader("Fitur Haralick (rata-rata dari 4 sudut)")
+
+cols = st.columns(4)
 for i, (nama, (prop, desc)) in enumerate(FITUR.items()):
     val = graycoprops(glcm, prop).mean()
     with cols[i]:
@@ -108,11 +105,11 @@ for i, (nama, (prop, desc)) in enumerate(FITUR.items()):
 st.divider()
 
 # BAGIAN 3 — Heatmap GLCM
-st.subheader("3️⃣ Visualisasi Matriks GLCM (Heatmap)")
+st.subheader("Visualisasi Matriks GLCM (Heatmap)")
 
 col_ctrl, _ = st.columns([1, 2])
 with col_ctrl:
-    sudut_pilih = st.radio("Pilih sudut:", ANGLE_LABELS, horizontal=True)
+    sudut_pilih = st.radio("sudut:", ANGLE_LABELS, horizontal=True)
 
 angle_idx = ANGLE_LABELS.index(sudut_pilih)
 glcm_2d   = glcm[:, :, 0, angle_idx]
@@ -139,31 +136,24 @@ with col_hm:
     plt.close(fig2)
 
 with col_info:
-    st.markdown("**💡 Cara membaca heatmap:**")
+    st.markdown(f"""
+-  biru gelap = jarang muncul
+-  biru terang = sering muncul
+""")
     st.markdown(f"""
 Setiap kotak pada heatmap menunjukkan **seberapa sering** pasangan piksel dengan intensitas tertentu muncul berdampingan pada sudut **{sudut_pilih}**.
-
-- Warna **biru gelap** = jarang muncul
-- Warna **biru terang** = sering muncul
-
-**Pola diagonal** → piksel cenderung punya intensitas yang sama → tekstur **halus/seragam**.
-
-**Pola menyebar** → banyak variasi intensitas → tekstur **kasar/kompleks**.
 """)
-
 st.divider()
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
 # BAGIAN 4 — Grafik per Sudut
-# ═══════════════════════════════════════════════════════════════════════════════
-st.subheader("4️⃣ Perbandingan Nilai Fitur per Sudut")
-st.caption("Jika nilai antar sudut hampir sama → tekstur tidak bergantung arah (isotropik).")
+st.subheader(" Perbandingan Nilai Fitur per Sudut")
 
 per_angle = {}
 for nama, (prop, _) in FITUR.items():
     per_angle[nama] = graycoprops(glcm, prop)[0].tolist()
 
-fig3, axes = plt.subplots(1, 5, figsize=(14, 3.5))
+fig3, axes = plt.subplots(1, 4, figsize=(12, 3.5))
 colors = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"]
 
 for ax, (nama, vals) in zip(axes, per_angle.items()):
@@ -178,5 +168,3 @@ for ax, (nama, vals) in zip(axes, per_angle.items()):
 fig3.tight_layout(pad=1.5)
 st.pyplot(fig3, use_container_width=True)
 plt.close(fig3)
-
-st.divider()
